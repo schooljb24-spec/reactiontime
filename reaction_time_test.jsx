@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const TOTAL_ROUNDS = 5;
@@ -39,13 +41,37 @@ export default function App() {
   const timerRef = useRef(null);
   const loadedRef = useRef(false);
 
+  // Inject keyframe styles safely inside the browser only
+  useEffect(() => {
+    const styleEl = document.createElement("style");
+    styleEl.textContent = `
+      @keyframes blink {
+        0%, 80%, 100% { opacity: 0.3; transform: scale(0.9); }
+        40% { opacity: 1; transform: scale(1.2); }
+      }
+      @keyframes pulse {
+        0% { transform: scale(1.15); }
+        100% { transform: scale(1); }
+      }
+      * { box-sizing: border-box; }
+      input::placeholder { color: #444; }
+      input:focus { border-color: #FFD70066 !important; }
+      button:active { transform: scale(0.97); }
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    `;
+    document.head.appendChild(styleEl);
+    return () => document.head.removeChild(styleEl);
+  }, []);
+
   // Load leaderboard from storage on mount
   useEffect(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
     (async () => {
       try {
-        const stored = await window.storage.get("reaction_leaderboard", true);
+        const stored = await window.storage?.get("reaction_leaderboard", true);
         if (stored && stored.value) {
           setLeaderboard(JSON.parse(stored.value));
         }
@@ -57,7 +83,7 @@ export default function App() {
 
   const saveLeaderboard = useCallback(async (entries) => {
     try {
-      await window.storage.set(
+      await window.storage?.set(
         "reaction_leaderboard",
         JSON.stringify(entries),
         true
@@ -727,24 +753,3 @@ const styles = {
     flexShrink: 0,
   },
 };
-
-// inject keyframes
-const styleEl = document.createElement("style");
-styleEl.textContent = `
-  @keyframes blink {
-    0%, 80%, 100% { opacity: 0.3; transform: scale(0.9); }
-    40% { opacity: 1; transform: scale(1.2); }
-  }
-  @keyframes pulse {
-    0% { transform: scale(1.15); }
-    100% { transform: scale(1); }
-  }
-  * { box-sizing: border-box; }
-  input::placeholder { color: #444; }
-  input:focus { border-color: #FFD70066 !important; }
-  button:active { transform: scale(0.97); }
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-`;
-document.head.appendChild(styleEl);
